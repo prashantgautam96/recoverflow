@@ -10,16 +10,8 @@ if [ -z "${APP_KEY:-}" ]; then
     exit 1
 fi
 
-case "${APP_KEY}" in
-    base64:*)
-        ;;
-    *)
-        if [ "${#APP_KEY}" -ne 32 ]; then
-            echo "APP_KEY must be a Laravel key (base64:...) or a 32-character raw string."
-            exit 1
-        fi
-        ;;
-esac
+APP_KEY="$(printf '%s' "${APP_KEY}" | tr -d '\r' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
+export APP_KEY
 
 php artisan package:discover --ansi --no-interaction
 
