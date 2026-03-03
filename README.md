@@ -109,7 +109,7 @@ Migrations:
 - [create_api_keys_table.php](/Users/prashantgautam/Herd/passwordgenerator/database/migrations/2026_03_03_165732_create_api_keys_table.php)
 - [create_clients_table.php](/Users/prashantgautam/Herd/passwordgenerator/database/migrations/2026_03_03_165732_create_clients_table.php)
 - [create_invoices_table.php](/Users/prashantgautam/Herd/passwordgenerator/database/migrations/2026_03_03_165732_create_invoices_table.php)
-- [create_invoice_reminders_table.php](/Users/prashantgautam/Herd/passwordgenerator/database/migrations/2026_03_03_165732_create_invoice_reminders_table.php)
+- [create_invoice_reminders_table.php](/Users/prashantgautam/Herd/passwordgenerator/database/migrations/2026_03_03_165733_create_invoice_reminders_table.php)
 - [create_user_api_tokens_table.php](/Users/prashantgautam/Herd/passwordgenerator/database/migrations/2026_03_03_171810_create_user_api_tokens_table.php)
 - [add_user_id_to_api_keys_table.php](/Users/prashantgautam/Herd/passwordgenerator/database/migrations/2026_03_03_171810_add_user_id_to_api_keys_table.php)
 - [add_billing_columns_to_users_table.php](/Users/prashantgautam/Herd/passwordgenerator/database/migrations/2026_03_03_171810_add_billing_columns_to_users_table.php)
