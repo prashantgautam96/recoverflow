@@ -255,6 +255,8 @@ Deploy steps:
 3. Select your repo and deploy.
 4. In the created `recoverflow-web` service, set these required env vars:
    - `APP_KEY` (Laravel key, e.g. output of `php artisan key:generate --show`)
+   - `MAIL_MAILER` (use a transactional provider like `smtp`, `postmark`, `resend`, or `ses`)
+   - provider credentials (`MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`, etc. for SMTP)
    - `STRIPE_SECRET`
    - `STRIPE_WEBHOOK_SECRET`
    - `STRIPE_PRICE_STARTER`
@@ -279,7 +281,7 @@ Post-deploy checks:
 
 ## 14. Current Limitations
 
-- Reminder delivery is stateful simulation (status updates) and does not yet send real email/SMS.
+- Reminder delivery currently supports real email only. SMS/WhatsApp channels are not implemented yet.
 - Auth is custom token table (not Sanctum/Passport).
 - Stripe webhook currently handles core subscription events only.
 - Angular UI is single-page dashboard without role-based access separation.

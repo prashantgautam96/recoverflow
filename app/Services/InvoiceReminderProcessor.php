@@ -2,13 +2,17 @@
 
 namespace App\Services;
 
+use App\Mail\InvoiceReminderMail;
 use App\Models\Invoice;
 use App\Models\InvoiceReminder;
+use Illuminate\Support\Facades\App;
+use Illuminate\Support\Facades\Mail;
+use Throwable;
 
 class InvoiceReminderProcessor
 {
     /**
-     * @return array{processed:int, sent:int, skipped:int}
+     * @return array{processed:int, sent:int, skipped:int, failed:int}
      */
     public function process(int $limit = 100): array
     {
@@ -16,6 +20,7 @@ class InvoiceReminderProcessor
             'processed' => 0,
             'sent' => 0,
             'skipped' => 0,
+            'failed' => 0,
         ];
 
         $reminders = InvoiceReminder::query()
@@ -47,18 +52,56 @@ class InvoiceReminderProcessor
                 ])->save();
             }
 
-            $reminder->forceFill([
-                'status' => InvoiceReminder::StatusSent,
-                'sent_at' => now(),
-            ])->save();
+            $recipientEmail = trim((string) ($invoice->client?->email ?? ''));
 
-            $invoice->forceFill([
-                'last_reminder_sent_at' => now(),
-            ])->save();
+            if ($recipientEmail === '' || $reminder->channel !== 'email') {
+                $reminder->forceFill([
+                    'status' => InvoiceReminder::StatusSkipped,
+                ])->save();
+
+                $counters['skipped']++;
+
+                continue;
+            }
+
+            if (! $this->isTransactionalMailerConfigured()) {
+                $counters['failed']++;
+
+                continue;
+            }
+
+            try {
+                Mail::to($recipientEmail)->send(new InvoiceReminderMail($reminder));
+
+                $reminder->forceFill([
+                    'status' => InvoiceReminder::StatusSent,
+                    'sent_at' => now(),
+                ])->save();
+
+                $invoice->forceFill([
+                    'last_reminder_sent_at' => now(),
+                ])->save();
+            } catch (Throwable $throwable) {
+                report($throwable);
+                $counters['failed']++;
+
+                continue;
+            }
 
             $counters['sent']++;
         }
 
         return $counters;
+    }
+
+    private function isTransactionalMailerConfigured(): bool
+    {
+        if (App::environment('testing')) {
+            return true;
+        }
+
+        $mailer = (string) config('mail.default');
+
+        return ! in_array($mailer, ['log', 'array'], true);
     }
 }

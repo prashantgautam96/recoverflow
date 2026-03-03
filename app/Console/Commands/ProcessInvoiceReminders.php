@@ -23,6 +23,7 @@ class ProcessInvoiceReminders extends Command
         $this->line("Processed: {$result['processed']}");
         $this->line("Sent: {$result['sent']}");
         $this->line("Skipped: {$result['skipped']}");
+        $this->line("Failed: {$result['failed']}");
 
         return self::SUCCESS;
     }
