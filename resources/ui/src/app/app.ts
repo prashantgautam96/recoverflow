@@ -121,21 +121,21 @@ export class App {
     {
       key: 'starter',
       label: 'Starter',
-      price: '$29/mo',
+      price: '$9/mo (Beta)',
       quota: '5,000 API calls',
       summary: 'Great for solo consultants and freelancers.'
     },
     {
       key: 'growth',
       label: 'Growth',
-      price: '$79/mo',
+      price: '$19/mo (Beta)',
       quota: '25,000 API calls',
       summary: 'Best for agency teams with recurring invoices.'
     },
     {
       key: 'scale',
       label: 'Scale',
-      price: '$199/mo',
+      price: '$49/mo (Beta)',
       quota: '100,000 API calls',
       summary: 'For high-volume finance ops and multi-client usage.'
     }

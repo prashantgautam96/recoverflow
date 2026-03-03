@@ -191,18 +191,18 @@ php artisan schedule:work</pre>
             <section class="pricing">
                 <article class="price">
                     <div>Solo</div>
-                    <strong>$29/mo</strong>
+                    <strong>$9/mo (Beta)</strong>
                     <div>Up to 5k API calls</div>
                 </article>
                 <article class="price">
                     <div>Team</div>
-                    <strong>$79/mo</strong>
+                    <strong>$19/mo (Beta)</strong>
                     <div>Up to 25k API calls</div>
                 </article>
                 <article class="price">
-                    <div>Recovery Plus</div>
-                    <strong>1% fee</strong>
-                    <div>On collected overdue invoices</div>
+                    <div>Scale</div>
+                    <strong>$49/mo (Beta)</strong>
+                    <div>Up to 100k API calls</div>
                 </article>
             </section>
 

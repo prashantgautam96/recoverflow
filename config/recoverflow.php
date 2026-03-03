@@ -11,19 +11,19 @@ return [
     'plans' => [
         'starter' => [
             'label' => 'Starter',
-            'monthly_price_usd' => 29,
+            'monthly_price_usd' => 9,
             'quota' => 5000,
             'stripe_price_id' => env('STRIPE_PRICE_STARTER'),
         ],
         'growth' => [
             'label' => 'Growth',
-            'monthly_price_usd' => 79,
+            'monthly_price_usd' => 19,
             'quota' => 25000,
             'stripe_price_id' => env('STRIPE_PRICE_GROWTH'),
         ],
         'scale' => [
             'label' => 'Scale',
-            'monthly_price_usd' => 199,
+            'monthly_price_usd' => 49,
             'quota' => 100000,
             'stripe_price_id' => env('STRIPE_PRICE_SCALE'),
         ],
