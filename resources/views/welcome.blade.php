@@ -144,7 +144,7 @@
         <main class="wrap">
             <section class="hero">
                 <article class="panel">
-                    <span class="badge">Laravel 12 Micro SaaS</span>
+                    <span class="badge">Now in Beta</span>
                     <h1 class="title">RecoverFlow turns overdue invoices into cash.</h1>
                     <p class="subtitle">
                         API-key based invoice recovery for agencies and freelancers. Create clients, create invoices, auto-schedule
