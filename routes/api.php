@@ -9,7 +9,6 @@ use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1/auth')->group(function () {
     Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:auth-api');
-    Route::post('/register/verify-otp', [AuthController::class, 'verifyRegistrationOtp'])->middleware('throttle:otp-verify');
     Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:auth-api');
 
     Route::middleware('auth.token')->group(function () {

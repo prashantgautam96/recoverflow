@@ -28,12 +28,5 @@ class AppServiceProvider extends ServiceProvider
 
             return Limit::perMinute(10)->by($throttleKey);
         });
-
-        RateLimiter::for('otp-verify', function (Request $request): Limit {
-            $email = strtolower(trim((string) $request->input('email', '')));
-            $throttleKey = 'otp|'.$email.'|'.$request->ip();
-
-            return Limit::perMinute(5)->by($throttleKey);
-        });
     }
 }

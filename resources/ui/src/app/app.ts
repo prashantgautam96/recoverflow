@@ -89,12 +89,6 @@ interface AuthResponse {
   user: UserProfile;
 }
 
-interface RegisterOtpResponse {
-  message: string;
-  otp_sent: boolean;
-  email: string;
-}
-
 interface MeResponse {
   user: UserProfile;
 }
@@ -150,8 +144,7 @@ export class App {
   protected authForm = {
     name: '',
     email: '',
-    password: '',
-    otp: ''
+    password: ''
   };
 
   protected apiKeyInput = localStorage.getItem('recoverflow.apiKey') ?? '';
@@ -166,7 +159,6 @@ export class App {
   protected readonly clients = signal<ClientRecord[]>([]);
   protected readonly invoices = signal<InvoiceRecord[]>([]);
   protected readonly userProfile = signal<UserProfile | null>(null);
-  protected readonly registrationOtpSent = signal(false);
 
   protected clientForm = {
     name: '',
@@ -198,8 +190,6 @@ export class App {
 
   protected setAuthMode(mode: AuthMode): void {
     this.authMode = mode;
-    this.registrationOtpSent.set(false);
-    this.authForm.otp = '';
     this.clearMessages();
   }
 
@@ -209,11 +199,7 @@ export class App {
 
     try {
       if (this.authMode === 'register') {
-        if (this.registrationOtpSent()) {
-          await this.verifyRegistrationOtpAndCreateAccount();
-        } else {
-          await this.requestRegistrationOtp();
-        }
+        await this.registerUser();
       } else {
         await this.loginUser();
       }
@@ -378,38 +364,11 @@ export class App {
     }
   }
 
-  protected async resendRegistrationOtp(): Promise<void> {
-    if (this.authMode !== 'register') {
-      return;
-    }
-
-    this.loading.set(true);
-    this.clearMessages();
-
-    try {
-      await this.requestRegistrationOtp();
-    } catch (error) {
-      this.setError(this.formatError(error));
-    } finally {
-      this.loading.set(false);
-    }
-  }
-
-  private async requestRegistrationOtp(): Promise<void> {
-    const response = await this.postPublic<RegisterOtpResponse>('/auth/register', {
+  private async registerUser(): Promise<void> {
+    const response = await this.postPublic<AuthResponse>('/auth/register', {
       name: this.authForm.name,
       email: this.authForm.email,
       password: this.authForm.password
-    });
-
-    this.registrationOtpSent.set(response.otp_sent);
-    this.successMessage.set(response.message);
-  }
-
-  private async verifyRegistrationOtpAndCreateAccount(): Promise<void> {
-    const response = await this.postPublic<AuthResponse>('/auth/register/verify-otp', {
-      email: this.authForm.email,
-      otp: this.authForm.otp
     });
 
     this.onAuthSuccess(response, 'Account created successfully.');
@@ -437,10 +396,8 @@ export class App {
     this.authForm = {
       name: '',
       email: '',
-      password: '',
-      otp: ''
+      password: ''
     };
-    this.registrationOtpSent.set(false);
 
     this.successMessage.set(message);
   }
