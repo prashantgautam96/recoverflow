@@ -254,6 +254,7 @@ Deploy steps:
 2. In Render, click **New +** -> **Blueprint**.
 3. Select your repo and deploy.
 4. In the created `recoverflow-web` service, set these required env vars:
+   - `APP_KEY` (Laravel key, e.g. output of `php artisan key:generate --show`)
    - `STRIPE_SECRET`
    - `STRIPE_WEBHOOK_SECRET`
    - `STRIPE_PRICE_STARTER`
