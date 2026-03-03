@@ -159,7 +159,7 @@
                             href="/app"
                             style="display:inline-block;padding:0.65rem 1rem;border-radius:12px;background:#112a26;color:#fff;text-decoration:none;font-weight:600;"
                         >
-                            Open Angular UI
+                            Start Your Beta Trial
                         </a>
                     </p>
                 </article>
