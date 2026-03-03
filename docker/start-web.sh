@@ -33,4 +33,4 @@ if [ "${RUN_SCHEDULER:-true}" = "true" ]; then
     php artisan schedule:work --no-interaction &
 fi
 
-exec php artisan serve --host=0.0.0.0 --port="${PORT:-10000}"
+exec php -S "0.0.0.0:${PORT:-10000}" -t public docker/router.php

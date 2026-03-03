@@ -267,6 +267,7 @@ What happens automatically:
 - Migrations run on startup (`php artisan migrate --force`).
 - Angular UI is built into `public/app` during Docker build.
 - Scheduler starts inside the web container (`schedule:work`).
+- PHP web server boots with a custom router so `/app` is routed correctly.
 
 Post-deploy checks:
 - Open `https://<render-domain>/app`
