@@ -1,0 +1,293 @@
+<div class="page-shell">
+  <div class="orb orb-a"></div>
+  <div class="orb orb-b"></div>
+
+  <main class="layout">
+    <header class="hero panel">
+      <div>
+        <p class="eyebrow">RecoverFlow Angular Console</p>
+        <h1>Invoice recovery dashboard built for revenue operations.</h1>
+        <p class="lead">
+          Use auth + Stripe billing to onboard customers, then manage clients, invoices, and reminder automation with API keys.
+        </p>
+      </div>
+
+      <div class="key-box">
+        <label for="api-key">Tenant API Key</label>
+        <input
+          id="api-key"
+          type="password"
+          [(ngModel)]="apiKeyInput"
+          placeholder="rf_live_..."
+          autocomplete="off"
+        />
+        <button type="button" [disabled]="loading()" (click)="connectAndLoad()">
+          {{ loading() ? 'Loading...' : 'Connect & Refresh Data' }}
+        </button>
+      </div>
+    </header>
+
+    @if (errorMessage()) {
+      <section class="notice error">{{ errorMessage() }}</section>
+    }
+
+    @if (successMessage()) {
+      <section class="notice success">{{ successMessage() }}</section>
+    }
+
+    <section class="auth-billing-grid">
+      <article class="panel auth-panel">
+        <div class="mode-tabs">
+          <button type="button" class="tab" [class.active]="authMode === 'register'" (click)="setAuthMode('register')">Register</button>
+          <button type="button" class="tab" [class.active]="authMode === 'login'" (click)="setAuthMode('login')">Login</button>
+        </div>
+
+        <div class="form-grid">
+          @if (authMode === 'register') {
+            <label>
+              Full Name
+              <input [(ngModel)]="authForm.name" type="text" placeholder="Prashant Gautam" />
+            </label>
+          }
+
+          <label>
+            Email
+            <input [(ngModel)]="authForm.email" type="email" placeholder="you@agency.com" />
+          </label>
+          <label>
+            Password
+            <input [(ngModel)]="authForm.password" type="password" placeholder="min 8 characters" />
+          </label>
+        </div>
+
+        <div class="row-actions">
+          <button type="button" [disabled]="loading()" (click)="submitAuth()">
+            {{ authMode === 'register' ? 'Create Account' : 'Login' }}
+          </button>
+
+          <button type="button" class="ghost" [disabled]="loading() || !isAuthenticated()" (click)="logout()">
+            Logout
+          </button>
+        </div>
+
+        @if (userProfile()) {
+          <div class="user-chip">
+            <strong>{{ userProfile()?.name }}</strong>
+            <span>{{ userProfile()?.email }}</span>
+            <span>Plan: {{ userProfile()?.billing_plan }} | Subscription: {{ userProfile()?.subscription_status }}</span>
+          </div>
+        }
+      </article>
+
+      <article class="panel billing-panel">
+        <h3>Stripe Billing</h3>
+        <p class="muted">Start checkout for a subscription plan. Configure Stripe keys and price IDs in `.env` first.</p>
+
+        <div class="plan-grid">
+          @for (plan of billingPlans; track plan.key) {
+            <section class="plan-card">
+              <h4>{{ plan.label }}</h4>
+              <p class="price">{{ plan.price }}</p>
+              <p class="quota">{{ plan.quota }}</p>
+              <p class="muted">{{ plan.summary }}</p>
+              <button type="button" [disabled]="loading() || !isAuthenticated()" (click)="startCheckout(plan.key)">
+                Checkout {{ plan.label }}
+              </button>
+            </section>
+          }
+        </div>
+      </article>
+    </section>
+
+    <section class="metrics-grid">
+      <article class="metric panel">
+        <p>Outstanding</p>
+        <h2>${{ ((dashboard()?.outstanding_cents ?? 0) / 100).toLocaleString() }}</h2>
+      </article>
+      <article class="metric panel">
+        <p>Overdue</p>
+        <h2>${{ ((dashboard()?.overdue_cents ?? 0) / 100).toLocaleString() }}</h2>
+      </article>
+      <article class="metric panel">
+        <p>Recovered This Month</p>
+        <h2>${{ ((dashboard()?.recovered_this_month_cents ?? 0) / 100).toLocaleString() }}</h2>
+      </article>
+      <article class="metric panel">
+        <p>Reminder Queue</p>
+        <h2>{{ dashboard()?.reminders_due_now ?? 0 }}</h2>
+      </article>
+      <article class="metric panel">
+        <p>Open Invoices</p>
+        <h2>{{ dashboard()?.open_invoice_count ?? 0 }}</h2>
+      </article>
+      <article class="metric panel">
+        <p>API Usage</p>
+        <h2>{{ dashboard()?.api_usage?.used_this_month ?? 0 }} / {{ dashboard()?.api_usage?.monthly_quota ?? 0 }}</h2>
+      </article>
+    </section>
+
+    <section class="forms-grid">
+      <article class="panel">
+        <h3>Create Client</h3>
+        <div class="form-grid">
+          <label>
+            Name
+            <input [(ngModel)]="clientForm.name" type="text" placeholder="Alex Martin" />
+          </label>
+          <label>
+            Email
+            <input [(ngModel)]="clientForm.email" type="email" placeholder="alex@client.com" />
+          </label>
+          <label>
+            Company
+            <input [(ngModel)]="clientForm.company" type="text" placeholder="Client Co" />
+          </label>
+          <label>
+            Timezone
+            <input [(ngModel)]="clientForm.timezone" type="text" placeholder="America/New_York" />
+          </label>
+          <label class="full-width">
+            Notes
+            <textarea [(ngModel)]="clientForm.notes" rows="3" placeholder="VIP client, monthly billing."></textarea>
+          </label>
+        </div>
+        <button type="button" [disabled]="loading()" (click)="createClient()">Create Client</button>
+      </article>
+
+      <article class="panel">
+        <h3>Create Invoice</h3>
+        <div class="form-grid">
+          <label>
+            Client
+            <select [(ngModel)]="invoiceForm.client_id">
+              <option [ngValue]="0">Select a client</option>
+              @for (client of clients(); track client.id) {
+                <option [ngValue]="client.id">{{ client.name }}</option>
+              }
+            </select>
+          </label>
+          <label>
+            Invoice Number
+            <input [(ngModel)]="invoiceForm.invoice_number" type="text" placeholder="INV-2048" />
+          </label>
+          <label>
+            Amount
+            <input [(ngModel)]="invoiceForm.amount" type="number" min="0" step="0.01" />
+          </label>
+          <label>
+            Currency
+            <input [(ngModel)]="invoiceForm.currency" type="text" maxlength="3" />
+          </label>
+          <label>
+            Issued At
+            <input [(ngModel)]="invoiceForm.issued_at" type="date" />
+          </label>
+          <label>
+            Due At
+            <input [(ngModel)]="invoiceForm.due_at" type="date" />
+          </label>
+          <label>
+            Late Fee %
+            <input [(ngModel)]="invoiceForm.late_fee_percent" type="number" min="0" step="0.1" max="30" />
+          </label>
+          <label class="full-width">
+            Payment URL
+            <input [(ngModel)]="invoiceForm.payment_url" type="url" placeholder="https://pay.example.com/inv-2048" />
+          </label>
+        </div>
+        <button type="button" [disabled]="loading()" (click)="createInvoice()">Create Invoice + Schedule Reminders</button>
+      </article>
+    </section>
+
+    <section class="table-panel panel">
+      <div class="table-header">
+        <h3>Clients</h3>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Company</th>
+              <th>Timezone</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (client of clients(); track client.id) {
+              <tr>
+                <td>{{ client.name }}</td>
+                <td>{{ client.email || '-' }}</td>
+                <td>{{ client.company || '-' }}</td>
+                <td>{{ client.timezone }}</td>
+              </tr>
+            }
+            @if (clients().length === 0) {
+              <tr>
+                <td colspan="4" class="empty">No clients yet. Add one to start billing.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="table-panel panel">
+      <div class="table-header between">
+        <h3>Invoices</h3>
+        <select [ngModel]="statusFilter" (ngModelChange)="onStatusFilterChange($event)">
+          <option value="all">All</option>
+          <option value="pending">Pending</option>
+          <option value="overdue">Overdue</option>
+          <option value="paid">Paid</option>
+        </select>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Invoice</th>
+              <th>Client</th>
+              <th>Amount</th>
+              <th>Due</th>
+              <th>Status</th>
+              <th>Reminders</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (invoice of invoices(); track invoice.id) {
+              <tr>
+                <td>{{ invoice.invoice_number }}</td>
+                <td>{{ invoice.client.name }}</td>
+                <td>{{ invoice.currency }} {{ invoice.amount.toLocaleString() }}</td>
+                <td>{{ invoice.due_at }}</td>
+                <td>
+                  <span class="badge" [class.pending]="invoice.status === 'pending'" [class.overdue]="invoice.status === 'overdue'" [class.paid]="invoice.status === 'paid'">
+                    {{ invoice.status }}
+                  </span>
+                </td>
+                <td>{{ invoice.reminders.length }}</td>
+                <td>
+                  <button
+                    type="button"
+                    class="small"
+                    [disabled]="loading() || invoice.status === 'paid'"
+                    (click)="markInvoicePaid(invoice.id)"
+                  >
+                    Mark Paid
+                  </button>
+                </td>
+              </tr>
+            }
+            @if (invoices().length === 0) {
+              <tr>
+                <td colspan="7" class="empty">No invoices yet.</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+</div>

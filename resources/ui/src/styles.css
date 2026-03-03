@@ -1,0 +1,8 @@
+@import url('https://fonts.bunny.net/css?family=space-grotesk:400,500,700|fraunces:500,700');
+
+html,
+body {
+  margin: 0;
+  font-family: 'Space Grotesk', sans-serif;
+  color: #112a26;
+}

@@ -1,0 +1,67 @@
+databases:
+  - name: recoverflow-db
+    databaseName: recoverflow
+    user: recoverflow
+    plan: free
+
+services:
+  - type: web
+    name: recoverflow-web
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /app
+    envVars:
+      - key: APP_NAME
+        value: RecoverFlow
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: "false"
+      - key: APP_KEY
+        generateValue: true
+      - key: LOG_CHANNEL
+        value: stderr
+      - key: LOG_LEVEL
+        value: info
+      - key: DB_CONNECTION
+        value: pgsql
+      - key: DB_HOST
+        fromDatabase:
+          name: recoverflow-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: recoverflow-db
+          property: port
+      - key: DB_DATABASE
+        fromDatabase:
+          name: recoverflow-db
+          property: database
+      - key: DB_USERNAME
+        fromDatabase:
+          name: recoverflow-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: recoverflow-db
+          property: password
+      - key: SESSION_DRIVER
+        value: database
+      - key: CACHE_STORE
+        value: database
+      - key: QUEUE_CONNECTION
+        value: database
+      - key: RUN_SCHEDULER
+        value: "true"
+      - key: STRIPE_SECRET
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: STRIPE_PRICE_STARTER
+        sync: false
+      - key: STRIPE_PRICE_GROWTH
+        sync: false
+      - key: STRIPE_PRICE_SCALE
+        sync: false
