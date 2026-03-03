@@ -1,15 +1,49 @@
 <?php
 
+use App\Mail\RegistrationOtpMail;
 use App\Models\ApiKey;
+use App\Models\PendingRegistration;
 use App\Models\User;
 use App\Models\UserApiToken;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Mail;
 
-it('registers a user and returns auth plus default api key', function () {
+it('sends registration otp and stores pending registration data', function () {
+    Mail::fake();
+
     $response = $this->postJson('/api/v1/auth/register', [
         'name' => 'Prashant Gautam',
         'email' => 'prashant@example.com',
         'password' => 'securepass123',
+    ]);
+
+    $response
+        ->assertCreated()
+        ->assertJsonPath('otp_sent', true)
+        ->assertJsonPath('email', 'prashant@example.com');
+
+    Mail::assertSent(RegistrationOtpMail::class, function (RegistrationOtpMail $mail): bool {
+        return $mail->hasTo('prashant@example.com');
+    });
+
+    expect(PendingRegistration::query()->where('email', 'prashant@example.com')->exists())->toBeTrue()
+        ->and(User::query()->where('email', 'prashant@example.com')->exists())->toBeFalse();
+});
+
+it('verifies registration otp and creates account with auth token', function () {
+    PendingRegistration::query()->create([
+        'name' => 'Prashant Gautam',
+        'email' => 'prashant@example.com',
+        'password' => Hash::make('securepass123'),
+        'otp_hash' => PendingRegistration::hashOtp('prashant@example.com', '123456'),
+        'otp_expires_at' => now()->addMinutes(10),
+        'attempts' => 0,
+    ]);
+
+    $response = $this->postJson('/api/v1/auth/register/verify-otp', [
+        'email' => 'prashant@example.com',
+        'otp' => '123456',
     ]);
 
     $response
@@ -21,13 +55,30 @@ it('registers a user and returns auth plus default api key', function () {
             'user' => ['id', 'api_keys'],
         ]);
 
-    $authToken = $response->json('auth_token');
+    $user = User::query()->where('email', 'prashant@example.com')->first();
 
-    $this->getJson('/api/v1/auth/me', [
-        'Authorization' => 'Bearer '.$authToken,
-    ])->assertOk()->assertJsonPath('user.name', 'Prashant Gautam');
+    expect($user)->not->toBeNull()
+        ->and($user?->email_verified_at)->not->toBeNull()
+        ->and(PendingRegistration::query()->where('email', 'prashant@example.com')->exists())->toBeFalse()
+        ->and(ApiKey::query()->where('user_id', $user?->id)->count())->toBe(1);
+});
 
-    expect(ApiKey::query()->whereHas('user', fn ($query) => $query->where('email', 'prashant@example.com'))->count())->toBe(1);
+it('rejects invalid otp during registration verification', function () {
+    PendingRegistration::query()->create([
+        'name' => 'Prashant Gautam',
+        'email' => 'prashant@example.com',
+        'password' => Hash::make('securepass123'),
+        'otp_hash' => PendingRegistration::hashOtp('prashant@example.com', '123456'),
+        'otp_expires_at' => now()->addMinutes(10),
+        'attempts' => 0,
+    ]);
+
+    $this->postJson('/api/v1/auth/register/verify-otp', [
+        'email' => 'prashant@example.com',
+        'otp' => '000000',
+    ])
+        ->assertUnprocessable()
+        ->assertJsonPath('message', 'Invalid OTP code.');
 });
 
 it('logs in a user and issues auth token', function () {
@@ -48,6 +99,20 @@ it('logs in a user and issues auth token', function () {
             'auth_token',
             'user' => ['billing_plan', 'subscription_status'],
         ]);
+});
+
+it('blocks login for unverified users', function () {
+    User::factory()->unverified()->create([
+        'email' => 'pending@example.com',
+        'password' => 'password123',
+    ]);
+
+    $this->postJson('/api/v1/auth/login', [
+        'email' => 'pending@example.com',
+        'password' => 'password123',
+    ])
+        ->assertForbidden()
+        ->assertJsonPath('message', 'Verify your email with OTP before logging in.');
 });
 
 it('throttles repeated login attempts', function () {

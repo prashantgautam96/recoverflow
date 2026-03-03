@@ -43,7 +43,7 @@
         </div>
 
         <div class="form-grid">
-          @if (authMode === 'register') {
+          @if (authMode === 'register' && !registrationOtpSent()) {
             <label>
               Full Name
               <input [(ngModel)]="authForm.name" type="text" placeholder="Prashant Gautam" />
@@ -52,18 +52,32 @@
 
           <label>
             Email
-            <input [(ngModel)]="authForm.email" type="email" placeholder="you@agency.com" />
+            <input [(ngModel)]="authForm.email" type="email" placeholder="you@agency.com" [readonly]="authMode === 'register' && registrationOtpSent()" />
           </label>
-          <label>
-            Password
-            <input [(ngModel)]="authForm.password" type="password" placeholder="min 8 characters" />
-          </label>
+
+          @if (authMode === 'register' && registrationOtpSent()) {
+            <label>
+              Verification OTP
+              <input [(ngModel)]="authForm.otp" type="text" maxlength="6" placeholder="Enter 6-digit OTP" />
+            </label>
+          } @else {
+            <label>
+              Password
+              <input [(ngModel)]="authForm.password" type="password" placeholder="min 8 characters" />
+            </label>
+          }
         </div>
 
         <div class="row-actions">
           <button type="button" [disabled]="loading()" (click)="submitAuth()">
-            {{ authMode === 'register' ? 'Create Account' : 'Login' }}
+            {{ authMode === 'register' ? (registrationOtpSent() ? 'Verify OTP & Create Account' : 'Send OTP') : 'Login' }}
           </button>
+
+          @if (authMode === 'register' && registrationOtpSent()) {
+            <button type="button" class="ghost" [disabled]="loading()" (click)="resendRegistrationOtp()">
+              Resend OTP
+            </button>
+          }
 
           <button type="button" class="ghost" [disabled]="loading() || !isAuthenticated()" (click)="logout()">
             Logout

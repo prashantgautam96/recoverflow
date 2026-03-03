@@ -24,6 +24,12 @@ class EnsureAuthenticatedUserToken
             return $this->unauthorizedResponse('Invalid or expired user access token.');
         }
 
+        if ($token->user->email_verified_at === null) {
+            return response()->json([
+                'message' => 'Verify your email with OTP before accessing this resource.',
+            ], Response::HTTP_FORBIDDEN);
+        }
+
         $token->forceFill([
             'last_used_at' => now(),
         ])->save();

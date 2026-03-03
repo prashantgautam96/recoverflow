@@ -62,6 +62,12 @@ class EnsureValidApiKey
             return $this->unauthorizedResponse('Invalid API key.');
         }
 
+        if ($apiKey->user_id !== null && $apiKey->user?->email_verified_at === null) {
+            return response()->json([
+                'message' => 'Verify your email with OTP before using this API key.',
+            ], Response::HTTP_FORBIDDEN);
+        }
+
         $request->attributes->set('apiKey', $apiKey);
 
         return $next($request);
