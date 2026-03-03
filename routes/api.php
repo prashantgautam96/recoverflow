@@ -8,8 +8,8 @@ use App\Http\Controllers\Api\V1\InvoiceController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1/auth')->group(function () {
-    Route::post('/register', [AuthController::class, 'register']);
-    Route::post('/login', [AuthController::class, 'login']);
+    Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:auth-api');
+    Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:auth-api');
 
     Route::middleware('auth.token')->group(function () {
         Route::get('/me', [AuthController::class, 'me']);

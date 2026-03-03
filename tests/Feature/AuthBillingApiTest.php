@@ -50,6 +50,22 @@ it('logs in a user and issues auth token', function () {
         ]);
 });
 
+it('throttles repeated login attempts', function () {
+    User::factory()->create([
+        'email' => 'throttle@example.com',
+        'password' => 'password123',
+    ]);
+
+    for ($attempt = 1; $attempt <= 11; $attempt++) {
+        $response = $this->postJson('/api/v1/auth/login', [
+            'email' => 'throttle@example.com',
+            'password' => 'incorrect-password',
+        ]);
+    }
+
+    $response->assertStatus(429);
+});
+
 it('creates a stripe checkout session for authenticated users', function () {
     Http::fake([
         'https://api.stripe.com/v1/checkout/sessions' => Http::response([
@@ -131,4 +147,26 @@ it('updates subscription state from stripe webhook payload', function () {
         ->and($user->stripe_subscription_id)->toBe('sub_test_123')
         ->and($apiKey->plan)->toBe('growth')
         ->and($apiKey->monthly_quota)->toBe(25000);
+});
+
+it('rejects stripe webhooks when webhook secret is not configured', function () {
+    config()->set('services.stripe.webhook_secret', '');
+
+    $payload = json_encode([
+        'type' => 'checkout.session.completed',
+        'data' => [
+            'object' => [
+                'metadata' => [
+                    'user_id' => '1',
+                    'plan' => 'starter',
+                ],
+            ],
+        ],
+    ], JSON_THROW_ON_ERROR);
+
+    $this->call('POST', '/api/v1/billing/webhook', [], [], [], [
+        'CONTENT_TYPE' => 'application/json',
+    ], $payload)
+        ->assertBadRequest()
+        ->assertJsonPath('message', 'Invalid Stripe webhook signature.');
 });

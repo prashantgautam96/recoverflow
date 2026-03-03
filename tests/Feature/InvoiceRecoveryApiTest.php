@@ -72,3 +72,22 @@ it('blocks requests when an api key has exhausted quota', function () {
         'X-Api-Key' => $plainTextKey,
     ])->assertStatus(429);
 });
+
+it('resets usage counters on a new month before consuming quota', function () {
+    $plainTextKey = 'rf_live_test_month_reset_key';
+
+    ApiKey::factory()
+        ->withPlainTextKey($plainTextKey)
+        ->create([
+            'monthly_quota' => 2,
+            'used_this_month' => 2,
+            'last_used_at' => now()->subMonth(),
+        ]);
+
+    $this->getJson('/api/v1/dashboard', [
+        'X-Api-Key' => $plainTextKey,
+    ])
+        ->assertOk()
+        ->assertJsonPath('api_usage.used_this_month', 1)
+        ->assertJsonPath('api_usage.monthly_quota', 2);
+});

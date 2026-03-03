@@ -6,6 +6,7 @@ use App\Models\ApiKey;
 use Closure;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\Response;
 
 class EnsureValidApiKey
@@ -18,19 +19,48 @@ class EnsureValidApiKey
             return $this->unauthorizedResponse('Missing API key. Send X-Api-Key header.');
         }
 
-        $apiKey = ApiKey::findActiveByPlainTextKey($plainTextKey);
+        $usageReservation = DB::transaction(function () use ($plainTextKey): array {
+            $apiKey = ApiKey::query()
+                ->where('key_hash', ApiKey::hashPlainTextKey($plainTextKey))
+                ->where('active', true)
+                ->lockForUpdate()
+                ->first();
 
-        if ($apiKey === null) {
+            if ($apiKey === null) {
+                return [
+                    'status' => 'invalid',
+                    'api_key' => null,
+                ];
+            }
+
+            if (! $apiKey->consumeQuotaUnit()) {
+                return [
+                    'status' => 'quota_exceeded',
+                    'api_key' => $apiKey,
+                ];
+            }
+
+            return [
+                'status' => 'ok',
+                'api_key' => $apiKey,
+            ];
+        });
+
+        if ($usageReservation['status'] === 'invalid') {
             return $this->unauthorizedResponse('Invalid API key.');
         }
 
-        if ($apiKey->hasReachedQuota()) {
+        if ($usageReservation['status'] === 'quota_exceeded') {
             return response()->json([
                 'message' => 'Monthly API quota exceeded for this key.',
             ], Response::HTTP_TOO_MANY_REQUESTS);
         }
 
-        $apiKey->registerUsage();
+        $apiKey = $usageReservation['api_key'];
+
+        if (! $apiKey instanceof ApiKey) {
+            return $this->unauthorizedResponse('Invalid API key.');
+        }
 
         $request->attributes->set('apiKey', $apiKey);
 

@@ -66,7 +66,7 @@ class StripeCheckoutService
         $secret = (string) config('services.stripe.webhook_secret');
 
         if ($secret === '') {
-            return true;
+            return false;
         }
 
         if (! is_string($signatureHeader) || $signatureHeader === '') {

@@ -80,6 +80,22 @@ class ApiKey extends Model
         ])->save();
     }
 
+    public function consumeQuotaUnit(): bool
+    {
+        $currentUsage = $this->currentUsageForMonth();
+
+        if ($currentUsage >= $this->monthly_quota) {
+            return false;
+        }
+
+        $this->forceFill([
+            'used_this_month' => $currentUsage + 1,
+            'last_used_at' => now(),
+        ])->save();
+
+        return true;
+    }
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
