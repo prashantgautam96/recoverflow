@@ -165,11 +165,22 @@
                 </article>
 
                 <article class="panel">
-                    <h2>Launch Commands</h2>
-                    <pre>php artisan migrate --no-interaction
-php artisan recoverflow:create-api-key "Starter Tenant" --plan=starter --quota=5000
-php artisan recoverflow:process-reminders --limit=100
-php artisan schedule:work</pre>
+                    <h2>Why Teams Use RecoverFlow</h2>
+                    <p class="subtitle" style="margin-top:0;">
+                        Stop chasing every overdue invoice manually. RecoverFlow gives you one place to track open invoices,
+                        automate follow-ups, and move more payments to completed.
+                    </p>
+                    <p class="subtitle" style="margin-top:0.8rem;">
+                        Built for freelancers and agencies who want better cash flow without adding extra admin work.
+                    </p>
+                    <p style="margin-top:1rem;">
+                        <a
+                            href="/app"
+                            style="display:inline-block;padding:0.65rem 1rem;border-radius:12px;background:#e85d2a;color:#fff;text-decoration:none;font-weight:600;"
+                        >
+                            Join Beta
+                        </a>
+                    </p>
                 </article>
             </section>
 
@@ -207,14 +218,16 @@ php artisan schedule:work</pre>
             </section>
 
             <section class="panel" style="margin-top:1.5rem;">
-                <h2>API Quickstart</h2>
-                <pre>POST /api/v1/clients
-POST /api/v1/invoices
-POST /api/v1/invoices/{invoice}/mark-paid
-GET  /api/v1/invoices
-GET  /api/v1/dashboard
-
-Header: X-Api-Key: rf_live_...</pre>
+                <h2>How It Works</h2>
+                <p class="subtitle" style="margin-top:0;">
+                    1. Add your client and invoice details.
+                </p>
+                <p class="subtitle" style="margin-top:0;">
+                    2. RecoverFlow schedules and sends reminder emails automatically.
+                </p>
+                <p class="subtitle" style="margin-top:0;">
+                    3. Track overdue and recovered amounts in one dashboard.
+                </p>
             </section>
         </main>
     </body>
