@@ -28,6 +28,7 @@ class Invoice extends Model
         'status',
         'paid_at',
         'payment_url',
+        'webhook_secret',
         'late_fee_percent',
         'last_reminder_sent_at',
     ];

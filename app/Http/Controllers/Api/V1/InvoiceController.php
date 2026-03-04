@@ -13,6 +13,7 @@ use Illuminate\Database\QueryException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\Response;
 
 class InvoiceController extends Controller
@@ -66,6 +67,7 @@ class InvoiceController extends Controller
                 'due_at' => $validated['due_at'],
                 'status' => $invoiceStatus,
                 'payment_url' => $validated['payment_url'] ?? null,
+                'webhook_secret' => Str::random(40),
                 'late_fee_percent' => $validated['late_fee_percent'] ?? 0,
             ]);
         } catch (QueryException) {
@@ -132,6 +134,9 @@ class InvoiceController extends Controller
             'due_at' => $invoice->due_at?->toDateString(),
             'paid_at' => $invoice->paid_at?->toIso8601String(),
             'payment_url' => $invoice->payment_url,
+            'payment_webhook_url' => $invoice->webhook_secret
+                ? url("/api/v1/webhooks/payment/{$invoice->webhook_secret}")
+                : null,
             'late_fee_percent' => (float) $invoice->late_fee_percent,
             'client' => [
                 'id' => $invoice->client?->id,
