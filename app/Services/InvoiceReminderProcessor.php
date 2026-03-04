@@ -23,8 +23,13 @@ class InvoiceReminderProcessor
             'failed' => 0,
         ];
 
+        if (! $this->isTransactionalMailerConfigured()) {
+            return $counters;
+        }
+
         $reminders = InvoiceReminder::query()
             ->where('status', InvoiceReminder::StatusPending)
+            ->where('attempts', '<', InvoiceReminder::MaxAttempts)
             ->where('scheduled_for', '<=', now())
             ->with('invoice.client')
             ->orderBy('scheduled_for')
@@ -64,12 +69,6 @@ class InvoiceReminderProcessor
                 continue;
             }
 
-            if (! $this->isTransactionalMailerConfigured()) {
-                $counters['failed']++;
-
-                continue;
-            }
-
             try {
                 Mail::to($recipientEmail)->send(new InvoiceReminderMail($reminder));
 
@@ -83,6 +82,15 @@ class InvoiceReminderProcessor
                 ])->save();
             } catch (Throwable $throwable) {
                 report($throwable);
+
+                // Atomic increment so concurrent runs can't race past the cap.
+                InvoiceReminder::where('id', $reminder->id)->increment('attempts');
+                $reminder->refresh();
+
+                if ($reminder->attempts >= InvoiceReminder::MaxAttempts) {
+                    $reminder->forceFill(['status' => InvoiceReminder::StatusFailed])->save();
+                }
+
                 $counters['failed']++;
 
                 continue;

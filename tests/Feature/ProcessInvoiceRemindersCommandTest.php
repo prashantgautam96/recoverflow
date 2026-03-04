@@ -96,3 +96,60 @@ it('skips reminders when client email is missing', function () {
     expect($reminder->refresh()->status)->toBe(InvoiceReminder::StatusSkipped)
         ->and($reminder->refresh()->sent_at)->toBeNull();
 });
+
+it('marks a reminder as failed after exhausting max attempts', function () {
+    // Force every mail send to throw by swapping in a mock mailer.
+    $pendingMail = Mockery::mock();
+    $pendingMail->shouldReceive('send')->andThrow(new RuntimeException('SMTP connection refused'));
+    Mail::shouldReceive('to')->andReturn($pendingMail);
+
+    $apiKey = ApiKey::factory()->create();
+    $client = Client::factory()->create(['api_key_id' => $apiKey->id]);
+    $invoice = Invoice::factory()->create([
+        'api_key_id' => $apiKey->id,
+        'client_id' => $client->id,
+        'status' => Invoice::StatusPending,
+        'due_at' => now()->subDay()->toDateString(),
+    ]);
+
+    $reminder = InvoiceReminder::factory()->create([
+        'invoice_id' => $invoice->id,
+        'api_key_id' => $apiKey->id,
+        'status' => InvoiceReminder::StatusPending,
+        'scheduled_for' => now()->subMinutes(5),
+        'attempts' => InvoiceReminder::MaxAttempts - 1, // one attempt left
+    ]);
+
+    $this->artisan('recoverflow:process-reminders --limit=10')->assertSuccessful();
+
+    expect($reminder->refresh())
+        ->status->toBe(InvoiceReminder::StatusFailed)
+        ->attempts->toBe(InvoiceReminder::MaxAttempts);
+});
+
+it('does not pick up reminders that have already reached max attempts', function () {
+    Mail::fake();
+
+    $apiKey = ApiKey::factory()->create();
+    $client = Client::factory()->create(['api_key_id' => $apiKey->id]);
+    $invoice = Invoice::factory()->create([
+        'api_key_id' => $apiKey->id,
+        'client_id' => $client->id,
+        'status' => Invoice::StatusPending,
+        'due_at' => now()->subDay()->toDateString(),
+    ]);
+
+    InvoiceReminder::factory()->create([
+        'invoice_id' => $invoice->id,
+        'api_key_id' => $apiKey->id,
+        'status' => InvoiceReminder::StatusPending,
+        'scheduled_for' => now()->subMinutes(5),
+        'attempts' => InvoiceReminder::MaxAttempts, // already exhausted
+    ]);
+
+    $this->artisan('recoverflow:process-reminders --limit=10')
+        ->expectsOutput('Processed: 0')
+        ->assertSuccessful();
+
+    Mail::assertNothingSent();
+});

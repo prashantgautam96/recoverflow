@@ -16,10 +16,15 @@ class InvoiceReminder extends Model
 
     public const StatusSkipped = 'skipped';
 
+    public const StatusFailed = 'failed';
+
+    public const MaxAttempts = 3;
+
     protected $fillable = [
         'invoice_id',
         'api_key_id',
         'sequence',
+        'attempts',
         'scheduled_for',
         'sent_at',
         'status',
